@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+    <head>
+        <title>STARFIELD</title>
+        <meta charset="utf-8">
+        <meta name="description" content="STARFIELD JavaScipt demo.">
+        <meta name="author" content="Ng Guoyou">
+        <meta name="keywords" content="STARFIELD">
+        <link rel="stylesheet" media="all" href="css/starfield.css" type="text/css">
+        <script src="js/jquery-1.8.0.min.js" type="text/javascript"></script>
+        <!-- RIFFWAVE.js by Pedro Ladaria (http://codebase.es/riffwave/) -->
+        <script src="js/riffwave.js" type="text/javascript"></script>
+        <script src="js/starfield.js" type="text/javascript"></script>
+        <!-- Uses icons from Iconic (http://somerandomdude.com/work/iconic/) -->
+    </head>
+
+    <body>
+        <!-- Controls -->
+        <div id="starcontrol">
+            <!-- Star count -->
+            <div class="control" id="control-starcount-add" title="Increase star count by a factor of &phi;">
+                <div class="button control-button sprite-add" id="control-button-starcount-add" value="starcount-add"></div>
+            </div>
+
+            <div class="control" id="control-starcount-sub" title="Decrease star count by a factor of &phi;">
+                <div class="button control-button sprite-subtract" id="control-button-starcount-sub" value="starcount-sub"></div>
+            </div>
+
+            <!-- Warpspeed -->
+            <div class="control spacer" id="control-starspeed-add" title="Increase warpspeed by a factor of &phi;">
+                <div class="button control-button" id="control-button-starspeed-add" value="starspeed-add"></div>
+            </div>
+
+            <div class="control" id="control-starspeed-sub" title="Decrease warpspeed by a factor of &phi;">
+                <div class="button control-button" id="control-button-starspeed-sub" value="starspeed-sub"></div>
+            </div>
+
+            <!-- Rotation -->
+            <div class="control spacer" id="control-rotation" title="Spin out!">
+                <div class="button control-toggle" id="control-toggle-rotation" value="rotation"></div>
+            </div>
+
+            <!-- The Colorification Of Time And Space -->
+            <div class="control" id="control-colorise" title="Groove out!&#10;The background colour changes according to the time.">
+                <div class="button control-toggle" id="control-toggle-colorise" value="colorise"></div>
+            </div>
+
+            <!-- Audify -->
+            <div class="control spacer" id="control-audify" title="The machine that goes &#39;ping&#39;.&#10;Works best with a slow speed and a smaller star count.&#10;Does not work in Internet Explorer.">
+                <div class="button control-toggle" id="control-toggle-audify" value="audify"></div>
+            </div>
+
+            <div class="control" id="control-audify-add" title="Lenghtens sample beeps.">
+                <div class="button control-button" id="control-button-audify-add" value="audify-add"></div>
+            </div>
+
+            <div class="control" id="control-audify-sub" title="Shortens sample boops.">
+                <div class="button control-button" id="control-button-audify-sub" value="audify-sub"></div>
+            </div>
+
+            <div class="control spacer" id="control-info" title="STARFIELD, 2012.&#10;It appears we're lost in space.&#10;Try dragging the starfield.">
+                <div class="infobutton" id="info-button"></div>
+            </div>
+        </div>
+
+        <canvas id="starfield" width="900px" height="800px">
+            STARFIELD requires HTML5 <code>&lt;canvas&gt;</code> support.
+        </canvas>
+    </body>
+</html>
