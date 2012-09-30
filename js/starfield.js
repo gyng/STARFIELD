@@ -232,9 +232,9 @@ function Canvas() {
             star = this.starlist[i];
             star.update();
 
-            if (star.xPos < 0 ||
+            if (star.xPos < 0 - star.radius ||
                 star.xPos > viewportWidth ||
-                star.yPos < 0 ||
+                star.yPos < 0 - star.radius ||
                 star.yPos > viewportHeight) {
 
                 // Replace star if it's out of viewport
@@ -340,8 +340,6 @@ function Star(serial) {
             this.distance += this.dDistance;
             this.angle += this.dAngle;
             this.radius += this.dRadius;
-            //this.xPos = origin["x"] + Math.cos(this.angle) * this.distance;
-            //this.yPos = origin["y"] - Math.sin(this.angle) * this.distance;
             this.xPos = this.xPos + Math.cos(this.angle) * this.dDistance;
             this.yPos = this.yPos - Math.sin(this.angle) * this.dDistance;
         } else {
