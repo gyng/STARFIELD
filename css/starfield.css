@@ -42,8 +42,14 @@ canvas {
  */
 #starcontrol {
     position: fixed;
-    left: 40px;
-    top: 40px;
+    left: 5px;
+    top: 5px;
+    padding: 40px 60px 40px 20px;
+}
+
+#starcontrol-glow {
+    padding: 5px;
+    border-radius: 5px;
     box-shadow: 0 0 10px #3EC6D8;
 }
 

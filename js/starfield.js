@@ -48,7 +48,7 @@ $(document).ready(function() {
      */
     $("#starcontrol").hover(function() {
         $(this).stop().fadeTo(250, 1);
-        $("#starcontrol").css("box-shadow", "none");
+        $("#starcontrol-glow").css("box-shadow", "none");
     }, function() {
         $(this).fadeTo(500, 0);
     });
