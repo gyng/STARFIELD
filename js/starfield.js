@@ -342,8 +342,8 @@ function Star(serial) {
         // Slower stars are farther out so their sizes increase less
         this.dRadius = Math.random() * this.dDistance / 20;
         // Initialise starting position
-        this.xPos = (origin["x"] + Math.cos(this.angle) * this.distance + 0.5) << 0;
-        this.yPos = (origin["y"] - Math.sin(this.angle) * this.distance + 0.5) << 0;
+        this.xPos = origin["x"] + Math.cos(this.angle) * this.distance;
+        this.yPos = origin["y"] - Math.sin(this.angle) * this.distance;
     }
 
     /**
@@ -355,12 +355,12 @@ function Star(serial) {
             this.distance += this.dDistance;
             this.angle += this.dAngle;
             this.radius += this.dRadius;
-            this.xPos = (this.xPos + Math.cos(this.angle) * this.dDistance + 0.5) << 0;
-            this.yPos = (this.yPos - Math.sin(this.angle) * this.dDistance + 0.5) << 0;
+            this.xPos = this.xPos + Math.cos(this.angle) * this.dDistance;
+            this.yPos = this.yPos - Math.sin(this.angle) * this.dDistance;
         } else {
             this.angle = Math.PI - Math.atan2(mouseX - this.xPos, mouseY - this.yPos);
-            this.xPos = (this.xPos + Math.cos(this.angle) * this.dDistance + 0.5) << 0;
-            this.yPos = (this.yPos + Math.sin(this.angle) * this.dDistance + 0.5) << 0;
+            this.xPos = this.xPos + Math.cos(this.angle) * this.dDistance;
+            this.yPos = this.yPos + Math.sin(this.angle) * this.dDistance;
         }
     }
 
