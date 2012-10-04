@@ -319,11 +319,11 @@ function Star(serial) {
         // Initial size, radius is actually width/height of the now rect star
         this.radius = this.initialRadius;
         // Spiral
-        this.dAngle = rotation ? 0.035 : 0;
+        this.dAngle = rotation ? 0.5 / (this.distance) + 0.025 : 0;
         // Speed
         this.dDistance = (Math.random() * 10 + 5) * speedFactor;
         // Acceleration
-        this.d2Distance = Math.random() * 0.1 + 1;
+        this.d2Distance = Math.random() * 0.075 + 1.025;
         // Slower stars are farther out so their sizes increase less
         this.dRadius = Math.random() * this.dDistance / 20;
         // Initialise starting position
