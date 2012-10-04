@@ -289,11 +289,26 @@ function Canvas() {
      */
     var ptr = this;
     this.draw = function() {
-        setInterval(function() {
+        //setInterval(function() {
             ptr.drawStarfield();
             ptr.updateStars();
-        }, 16); // 60fps ~= 16.667
+            window.requestAnimFrame(ptr.draw);
+        //}, 16); // 60fps ~= 16.667
     }
+
+    /**
+     * window.requestAnimationFrame() shim
+     */
+    window.requestAnimFrame = (function(){
+      return  window.requestAnimationFrame       ||
+              window.webkitRequestAnimationFrame ||
+              window.mozRequestAnimationFrame    ||
+              window.oRequestAnimationFrame      ||
+              window.msRequestAnimationFrame     ||
+              function( callback ){
+                window.setTimeout(callback, 1000 / 60);
+              };
+    })();
 }
 
 /**
