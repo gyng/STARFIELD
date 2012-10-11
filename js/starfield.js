@@ -28,6 +28,7 @@ var colorise = false;
 
 // Mouse variables
 var mouseDown = false;
+var usingTouch = false;
 var mouseX;
 var mouseY;
 
@@ -84,6 +85,15 @@ $(document).ready(function() {
         mouseX = touch.pageX;
         mouseY = touch.pageY;
         mouseDown = true;
+
+        if (!usingTouch) {
+            $("#starcontrol-glow").css("box-shadow", "none");
+            $("#starcontrol").stop().fadeTo(150, 1);
+            $(".button").toggleClass("touchbutton");
+            $(".infobutton").toggleClass("hide");
+            $(".audiocontrol").toggleClass("hide");
+            usingTouch = true;
+        }
     });
 
     $(document).touchend(function() {

@@ -77,6 +77,17 @@ canvas {
 }
 
 /**
+ * Enlarged buttons for use when touch is detected
+ */
+.touchbutton {
+    width: 48px !important;
+    height: 48px !important;
+    padding: 10px !important;
+    margin: 25px !important;
+    border-radius: 16px !important;
+}
+
+/**
  * Infobutton style. A duplicate of .button, but without the related :hover and :adtive styles
  */
 .infobutton {
@@ -132,3 +143,10 @@ canvas {
 #control-button-audify-add { background: url("../img/32/increasesamplesize.png"); }
 #control-button-audify-sub { background: url("../img/32/reducesamplesize.png"); }
 #info-button { background: url("../img/32/info.png"); }
+
+/**
+ * Hiding class
+ */
+.hide {
+    display: none;
+}
