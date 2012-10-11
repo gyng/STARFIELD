@@ -77,6 +77,27 @@ $(document).ready(function() {
     });
 
     /**
+     * Touch events
+     */
+    $('#starfield').touchstart(function(e) {
+        var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+        mouseX = touch.pageX;
+        mouseY = touch.pageY;
+        mouseDown = true;
+    });
+
+    $(document).touchend(function() {
+        mouseDown = false;
+    });
+
+    $(document).touchmove(function(e) {
+        e.preventDefault();
+        var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+        mouseX = touch.pageX;
+        mouseY = touch.pageY;
+    });
+
+    /**
      * UI controls for togglable buttons.
      *
      * @this The button div being clicked.
