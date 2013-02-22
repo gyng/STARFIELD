@@ -33,7 +33,7 @@ $(document).ready(function() {
 
     // MIDI.js
     MIDI.loadPlugin({
-        soundfontUrl: "js/midi.js/soundfont/",
+        soundfontUrl: "js/MIDI.js/soundfont/",
         instrument: "acoustic_grand_piano",
         callback: function() {
                 MIDI.setVolume(0, 127);
