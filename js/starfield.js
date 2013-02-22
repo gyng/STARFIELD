@@ -91,6 +91,8 @@ $(document).ready(function() {
             $("#starcontrol-glow").css("box-shadow", "none");
             $("#starcontrol").stop().fadeTo(150, 1);
             $(".button").toggleClass("touchbutton");
+            $(".infobutton").toggleClass("hide");
+            $(".audiocontrol").toggleClass("hide");
             usingTouch = true;
         }
     });
