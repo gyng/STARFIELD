@@ -5,13 +5,13 @@ STARFIELD is a HTML5 + JavaScript experiment, and is what the name implies.
 
 ## Features
 
-* An audio-visual sensational starfield. (Audio does not work in IE9)
+* An audio-visual sensational starfield. (Sound requires HTML5 audio support)
 
 ## Installation
 1. Open `index.html` in some modern web browser with JavaScript enabled.
 
 ## Starfield uses
 
-* jQuery
-* Icons from Iconic (http://somerandomdude.com/work/iconic/)
-* RIFFWAVE.js by Pedro Ladaria (http://codebase.es/riffwave/)
+* [jQuery](http://jquery.com/)
+* [Icons from Iconic](http://somerandomdude.com/work/iconic/)
+* [MIDI.js](http://github.com/mudcube/MIDI.js)

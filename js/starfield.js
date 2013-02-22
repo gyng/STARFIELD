@@ -6,24 +6,16 @@
 var canvas;
 var viewportWidth = $(window).width();
 var viewportHeight = $(window).height();
-origin = [];
-origin["x"] = viewportWidth / 2;
-origin["y"] = viewportHeight / 2;
-
-// RIFFWAVE.js
-var audio = new Audio();
-var wave = new RIFFWAVE();
-var data = [];
-audio.volume = 0.4;
-wave.header.sampleRate = 8000; // set sample rate to 8KHz
-wave.header.numChannels = 2; // two channels (stereo)
+var origin = [];
+    origin["x"] = viewportWidth / 2;
+    origin["y"] = viewportHeight / 2;
 
 // Starfield control parameters
 var rotation = false;
 var starcount = 25;
-var speedFactor = 1;
+var totalStarcount = starcount;
+var speedFactor = 0.1;
 var audify = false;
-var sampleLength = 500;
 var colorise = false;
 
 // Mouse variables
@@ -38,6 +30,15 @@ $(document).ready(function() {
     canvas.createStarfield(starcount);
     canvas.draw();
     canvas.colorise();
+
+    // MIDI.js
+    MIDI.loadPlugin({
+        soundfontUrl: "js/midi.js/soundfont/",
+        instrument: "acoustic_grand_piano",
+        callback: function() {
+                MIDI.setVolume(0, 127);
+            }
+    });
 
     /**
      * Fades the settings box out on load.
@@ -156,16 +157,6 @@ $(document).ready(function() {
             speedFactor /= 1.61;
             console.log(speedFactor);
             break;
-
-        // Audify sample length
-        case "audify-add":
-            sampleLength *= 1.61;
-            console.log(sampleLength);
-            break;
-        case "audify-sub":
-            sampleLength /= 1.61;
-            console.log(sampleLength);
-            break;
         }
     });
 });
@@ -197,7 +188,7 @@ function Canvas() {
             this.context = this.canvas.getContext('2d');
             this.setSize();
         }
-    }
+    };
 
     /**
      * Sets the size of the canvas to be that of the browser window
@@ -205,7 +196,7 @@ function Canvas() {
     this.setSize = function() {
         this.canvas.width  = $(window).width();
         this.canvas.height = $(window).height() - 5; // Hack around wrong height from jQuery
-    }
+    };
 
     /**
      * Draws a single star. Currently stars are rects to save precious cycles.
@@ -218,7 +209,7 @@ function Canvas() {
         this.context.fillRect(star.xPos, star.yPos, star.radius, star.radius);
         this.context.closePath();
         this.context.fill();
-    }
+    };
 
     /**
      * Clears the canvas then iterates through starlist, a list of stars and draws them.
@@ -233,7 +224,7 @@ function Canvas() {
         for (i = 0; i < this.starlist.length; i++) {
             this.drawStar(this.starlist[i]);
         }
-    }
+    };
 
     /**
      * Creates stars and stores them in this.starlist.
@@ -249,7 +240,7 @@ function Canvas() {
             star.init();
             this.starlist[i] = star;
         }
-    }
+    };
 
     /**
      * Iterates through this.starlist and updates their positions.
@@ -271,18 +262,20 @@ function Canvas() {
                 // Replace star if it's out of viewport
                 if (audify) {
                     if (star.xPos - origin["x"] < 0) {
-                        star.audify("left");
+                        star.audify(0); // left
                     } else {
-                        star.audify("right");
+                        star.audify(1); // right
                     }
                 }
 
-                var star = new Star(star.serial);
+                star = new Star(star.serial);
                 star.init();
+
                 this.starlist[star.serial] = star;
+                totalStarcount++;
             }
         }
-    }
+    };
 
     /**
      * Returns a HSV representation of the current 24-hour time.
@@ -291,14 +284,14 @@ function Canvas() {
     this.timeToHsv = function(date) {
         var seconds = date.getSeconds();
         var minutes = date.getMinutes();
-        var hours = date.getHours();
+        var hours   = date.getHours();
 
         var h = (seconds / 60 * 360);
         var s = (minutes / 60 * 100) + "%";
         var v = ((100 - Math.abs(12 - (hours % 23)) / 12.0 * 70) - 20) + "%";
 
         return [h, s, v];
-    }
+    };
 
     this.colorise = function() {
         var hsvptr = this.timeToHsv;
@@ -313,7 +306,7 @@ function Canvas() {
                 $("body").css("background-color", defaultBodyColor);
             }
         }, 1000); // 1000 = 1s
-    }
+    };
 
     /**
      * The drawing loop. Draws a new starfield and updates stars.
@@ -325,7 +318,7 @@ function Canvas() {
             ptr.updateStars();
             window.requestAnimFrame(ptr.draw);
         //}, 16); // 60fps ~= 16.667
-    }
+    };
 
     /**
      * window.requestAnimationFrame() shim
@@ -346,36 +339,29 @@ function Canvas() {
  * Star object with attributes and audio functions.
  */
 function Star(serial) {
-    this.serial = serial; // 10032 is the worst
-    this.angle;
-    this.distance;
+    this.serial        = serial; // 10032 is the worst
+    this.angle         = null;
+    this.distance      = null;
     this.initialRadius = 2;
-    this.radius;
-    this.dAngle;
-    this.dDistance;
-    this.d2Distance
-    this.dRadius;
-    this.xPos;
-    this.yPos;
+    this.radius        = null;
+    this.dAngle        = null;
+    this.dDistance     = null;
+    this.d2Distance    = null;
+    this.dRadius       = null;
+    this.xPos          = null;
+    this.yPos          = null;
 
     this.init = function() {
-        this.angle = Math.random() * 360 / (Math.PI * 2); // Radians
-        // Initial distance from origin
-        this.distance = Math.random() * 20 - 10 + viewportHeight / 25;
-        // Initial size, radius is actually width/height of the now rect star
-        this.radius = this.initialRadius;
-        // Spiral
-        this.dAngle = rotation ? 0.5 / (this.distance) + 0.025 : 0;
-        // Speed
-        this.dDistance = (Math.random() * 10 + 5) * speedFactor;
-        // Acceleration
-        this.d2Distance = Math.random() * 0.075 + 1.025;
-        // Slower stars are farther out so their sizes increase less
-        this.dRadius = Math.random() * this.dDistance / 20;
-        // Initialise starting position
-        this.xPos = origin["x"] + Math.cos(this.angle) * this.distance;
-        this.yPos = origin["y"] - Math.sin(this.angle) * this.distance;
-    }
+        this.angle      = Math.random() * 360 / (Math.PI * 2); // Radians
+        this.distance   = Math.random() * 20 - 10 + viewportHeight / 25; // Initial distance from origin
+        this.radius     = this.initialRadius; // Initial size, radius is actually width/height of the now rect star
+        this.dAngle     = rotation ? 0.5 / (this.distance) + 0.025 : 0; // Spiral
+        this.dDistance  = (Math.random() * 10 + 5) * speedFactor; // Speed
+        this.d2Distance = Math.random() * 0.075 + 1.025; // Acceleration
+        this.dRadius    = Math.random() * this.dDistance / 20; // Slower stars are farther out so their sizes increase less
+        this.xPos       = origin["x"] + Math.cos(this.angle) * this.distance; // Initialise starting position
+        this.yPos       = origin["y"] - Math.sin(this.angle) * this.distance;
+    };
 
     /**
      * Advances the star by one step.
@@ -383,40 +369,58 @@ function Star(serial) {
     this.update = function() {
         if (!mouseDown) {
             this.dDistance *= this.d2Distance;
-            this.distance += this.dDistance;
-            this.angle += this.dAngle;
-            this.radius += this.dRadius;
-            this.xPos = this.xPos + Math.cos(this.angle) * this.dDistance;
-            this.yPos = this.yPos - Math.sin(this.angle) * this.dDistance;
+            this.distance  += this.dDistance;
+            this.angle     += this.dAngle;
+            this.radius    += this.dRadius;
+            this.xPos       = this.xPos + Math.cos(this.angle) * this.dDistance;
+            this.yPos       = this.yPos - Math.sin(this.angle) * this.dDistance;
         } else {
             this.angle = Math.PI - Math.atan2(mouseX - this.xPos, mouseY - this.yPos);
-            this.xPos = this.xPos + Math.cos(this.angle) * this.dDistance;
-            this.yPos = this.yPos + Math.sin(this.angle) * this.dDistance;
+            this.xPos  = this.xPos + Math.cos(this.angle) * this.dDistance;
+            this.yPos  = this.yPos + Math.sin(this.angle) * this.dDistance;
         }
-    }
+    };
 
     /**
      * Beeps or boops according to the position and size of the star.
-     * Uses RIFFWAVE.js
+     * Uses MIDI.js
      *
-     * @param direction Which speaker to ping ("left", "right")
+     * @param channel Which speaker to ping (left = 0, right = 1)
      */
-    this.audify = function(direction) {
-        var i = 0;
-        if (direction == "right") {
-            while (i<sampleLength*(this.radius/this.initialRadius)) {
-              data[i++] = 0;
-              data[i++] = 128+Math.round(127*Math.sin(i/(this.dDistance * this.yPos/viewportHeight))); // right speaker
-            }
-        } else if (direction == "left") {
-            while (i<sampleLength*(this.radius/this.initialRadius)) {
-              data[i++] = 128+Math.round(127*Math.sin(i/(this.dDistance * this.yPos/viewportHeight))); // left speaker
-              data[i++] = 0;
-            }
-        }
+    this.audify = function(channel) {
+        var chords = {
+            I:   [48, 52, 55, 60, 64, 67, 72],
+            ii:  [50, 53, 57, 62, 65, 69, 74],
+            iii: [52, 55, 59, 64, 67, 71, 76],
+            IV:  [41, 45, 48, 53, 57, 60, 65],
+            V:   [43, 47, 50, 55, 59, 62, 67],
+            vi:  [45, 48, 52, 57, 60, 64, 69],
+            vii: [47, 50, 53, 59, 62, 65, 71]
+        };
 
-        wave.Make(data); // make the wave file
-        audio.src = wave.dataURI; // set audio source
-        audio.play(); // we should hear two tones one on each speaker
-    }
+        var chordMap = ['I', 'ii', 'iii', 'IV', 'vi', 'vii'];
+
+        var chordFrequency = starcount;
+        var delay          = 0; // Play one note every quarter second
+        var maxNote        = 108;
+        var minNote        = 21;
+        var range          = 87 * Math.max(speedFactor, 1); // maxNote - minNote, affected by speed
+        //var note           = Math.floor((this.xPos / viewportWidth) * range / 2 +
+//                             (this.serial + 1) / (starcount + 1) * (range * 4) / 2); // The MIDI note
+        var note           = Math.floor(
+            (((totalStarcount % starcount) + 1) / starcount) * range / 2 +
+            (this.xPos / viewportWidth) * range / 2); // The MIDI note
+        var velocity       = Math.max(Math.min(400 * speedFactor, 300), 50); // How hard the note hits
+
+        if (totalStarcount % starcount === 0) {
+            var l = chordMap.length;
+            var chord = chords[chordMap[((totalStarcount * 1.1) ^ l) % (l - 1)]];
+            MIDI.chordOn(channel, chord, velocity, delay);
+            MIDI.chordOff(channel, chord, delay + 1);
+        } else {
+            // Play the note
+            MIDI.noteOn(channel, note, velocity, delay);
+            MIDI.noteOff(channel, note, delay + 0.1);
+        }
+    };
 }
