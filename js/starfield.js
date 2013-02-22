@@ -91,6 +91,7 @@ $(document).ready(function() {
             $("#starcontrol-glow").css("box-shadow", "none");
             $("#starcontrol").stop().fadeTo(150, 1);
             $(".button").toggleClass("touchbutton");
+            $(".infobutton").toggleClass("touchbutton");
             $(".audiocontrol").toggleClass("hide");
             usingTouch = true;
         }
