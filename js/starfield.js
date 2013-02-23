@@ -60,14 +60,16 @@ $(document).ready(function() {
      */
     $('#starfield').mousedown(function(e) {
         e.originalEvent.preventDefault(); // Hack to bypass Chrome's cursor changing to text-select on drag
-        $("#starfield").css("cursor", "move");
+        $("#starfield").addClass("grabbing");
+        $("#starfield").removeClass("grabbable");
         mouseX = e.pageX;
         mouseY = e.pageY;
         mouseDown = true;
     });
 
     $(document).mouseup(function() {
-        $("#starfield").css("cursor", "auto");
+        $("#starfield").addClass("grabbable");
+        $("#starfield").removeClass("grabbing");
         mouseDown = false;
     });
 

@@ -14,9 +14,11 @@ body {
     background-color: #111;
     margin: 0;
     transition: background-color 0.66s;
+    -ms-transition: background-color 0.66s;
     -moz-transition: background-color 0.66s; /* Firefox 4 */
     -webkit-transition: background-color 0.66s; /* Safari and Chrome */
     -o-transition: background-color 0.66s; /* Opera */
+
 
     /*box-shadow: inset 0 0 20px #000;*/ /* Lags */
 }
@@ -29,6 +31,22 @@ canvas {
     color: #DDD;
     font-family: "Georgia", "Arial", "Helvetica", serif;
     font-size: 36px;
+}
+
+/**
+* Set cursor to a hand to indicate an interactable canvas. Toggled in JS.
+*/
+.grabbable {
+    cursor:hand;
+    cursor:grab;
+    cursor:-moz-grab;
+    cursor:-webkit-grab;
+}
+
+.grabbing {
+    cursor:grabbing;
+    cursor:-moz-grabbing;
+    cursor:-webkit-grabbing;
 }
 
 
