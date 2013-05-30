@@ -1,201 +1,216 @@
+/* jshint browser: true */
+/* global document, window, $, MIDI, console */
+
 /**
 * @file starfield.css
 * @author Ng Guoyou
 */
+(function () {
+    'use strict';
 
-var canvas;
-var viewportWidth = $(window).width();
-var viewportHeight = $(window).height();
-var origin = [];
+    var canvas;
+    var viewportWidth = $(window).width();
+    var viewportHeight = $(window).height();
+    var origin = [];
     origin["x"] = viewportWidth / 2;
     origin["y"] = viewportHeight / 2;
 
-// Starfield control parameters
-var rotation = false;
-var starcount = 25;
-var totalStarcount = starcount;
-var speedFactor = 0.1;
-var audify = false;
-var colorise = false;
+    // Starfield control parameters
+    var rotation = false;
+    var starcount = 25;
+    var totalStarcount = starcount;
+    var speedFactor = 0.1;
+    var audify = false;
+    var colorise = false;
+    var hyperspace = false;
 
-// Mouse variables
-var mouseDown = false;
-var usingTouch = false;
-var mouseX;
-var mouseY;
+    // Mouse variables
+    var mouseDown = false;
+    var usingTouch = false;
+    var mouseX;
+    var mouseY;
 
-$(document).ready(function() {
-    canvas = new Canvas();
-    canvas.init();
-    canvas.createStarfield(starcount);
-    canvas.draw();
-    canvas.colorise();
+    $(document).ready(function () {
+        canvas = new Canvas();
+        canvas.createStarfield(starcount);
+        canvas.draw();
+        canvas.colorise();
 
-    // MIDI.js
-    MIDI.loadPlugin({
-        soundfontUrl: "js/MIDI.js/soundfont/",
-        instrument: "acoustic_grand_piano",
-        callback: function() {
-                MIDI.setVolume(0, 127);
-            }
-    });
+        // MIDI.js
+        MIDI.loadPlugin({
+            soundfontUrl: "js/MIDI.js/soundfont/",
+            instrument: "acoustic_grand_piano",
+            callback: function () {
+                    MIDI.setVolume(0, 127);
+                }
+        });
 
-    /**
-     * Fades the settings box out on load.
-     */
-    $("#starcontrol").fadeTo(10000, 0);
+        /**
+         * Fades the settings box out on load.
+         */
+        $("#starcontrol").fadeTo(10000, 0);
 
-    /**
-     * Fades the settings box in on mouse hover, and fades it out on mouseout.
-     */
-    $("#starcontrol").hover(function() {
-        $(this).stop().fadeTo(250, 1);
-        $("#starcontrol-glow").css("box-shadow", "none");
-    }, function() {
-        $(this).fadeTo(500, 0);
-    });
+        /**
+         * Fades the settings box in on mouse hover, and fades it out on mouseout.
+         */
+        $("#starcontrol").hover(function () {
+            $(this).stop().fadeTo(250, 1);
+            $("#starcontrol-glow").css("box-shadow", "none");
+        }, function () {
+            $(this).fadeTo(500, 0);
+        });
 
-    /**
-     * Mouse controls.
-     */
-    $('#starfield').mousedown(function(e) {
-        e.originalEvent.preventDefault(); // Hack to bypass Chrome's cursor changing to text-select on drag
-        $("#starfield").addClass("grabbing");
-        $("#starfield").removeClass("grabbable");
-        mouseX = e.pageX;
-        mouseY = e.pageY;
-        mouseDown = true;
-    });
-
-    $(document).mouseup(function() {
-        $("#starfield").addClass("grabbable");
-        $("#starfield").removeClass("grabbing");
-        mouseDown = false;
-    });
-
-    $(document).mousemove(function(e) {
-        if(e.pageX) {
+        /**
+         * Mouse controls.
+         */
+        $('#starfield').mousedown(function (e) {
+            e.originalEvent.preventDefault(); // Hack to bypass Chrome's cursor changing to text-select on drag
+            $("#starfield").addClass("grabbing");
+            $("#starfield").removeClass("grabbable");
             mouseX = e.pageX;
             mouseY = e.pageY;
-        }
+            mouseDown = true;
+        });
+
+        $(document).mouseup(function () {
+            $("#starfield").addClass("grabbable");
+            $("#starfield").removeClass("grabbing");
+            mouseDown = false;
+        });
+
+        $(document).mousemove(function (e) {
+            if (e.pageX) {
+                mouseX = e.pageX;
+                mouseY = e.pageY;
+            }
+        });
+
+        /**
+         * Touch events
+         */
+        $('#starfield').touchstart(function (e) {
+            var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+            mouseX = touch.pageX;
+            mouseY = touch.pageY;
+            mouseDown = true;
+
+            if (!usingTouch) {
+                $("#starcontrol-glow").css("box-shadow", "none");
+                $("#starcontrol").stop().fadeTo(150, 1);
+                $(".button").toggleClass("touchbutton");
+                $(".infobutton").toggleClass("hide");
+                $(".audiocontrol").toggleClass("hide");
+                usingTouch = true;
+            }
+        });
+
+        $(document).touchend(function () {
+            mouseDown = false;
+        });
+
+        $(document).touchmove(function (e) {
+            e.preventDefault();
+            var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
+            mouseX = touch.pageX;
+            mouseY = touch.pageY;
+        });
+
+        /**
+         * UI controls for togglable buttons.
+         *
+         * @this The button div being clicked.
+         */
+        $('.control-toggle').click(function () {
+            switch ($(this).attr("value")) {
+            case "rotation":
+                rotation = !rotation;
+                break;
+            case "audify":
+                audify = !audify;
+                break;
+            case "colorise":
+                colorise = !colorise;
+                break;
+            case "hyperspace":
+                hyperspace = !hyperspace;
+                break;
+            }
+
+            $(this).toggleClass("control-active");
+        });
+
+        /**
+         * UI controls for normal buttons.
+         *
+         * @this The button div being clicked.
+         */
+        $('.control-button').click(function () {
+            switch ($(this).attr("value")) {
+            // Starcount
+            case "starcount-add":
+                starcount = Math.floor(starcount * 1.61);
+                console.log(starcount);
+                canvas.createStarfield(starcount);
+                break;
+            case "starcount-sub":
+                starcount = Math.ceil(starcount / 1.61);
+                console.log(starcount);
+                canvas.createStarfield(starcount);
+                break;
+
+            // Speed factor
+            case "starspeed-add":
+                speedFactor *= 1.61;
+                console.log(speedFactor);
+                break;
+            case "starspeed-sub":
+                speedFactor /= 1.61;
+                console.log(speedFactor);
+                break;
+            }
+        });
     });
 
     /**
-     * Touch events
+     * Resizes canvas and recenters origin when the browser window is resized.
      */
-    $('#starfield').touchstart(function(e) {
-        var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
-        mouseX = touch.pageX;
-        mouseY = touch.pageY;
-        mouseDown = true;
-
-        if (!usingTouch) {
-            $("#starcontrol-glow").css("box-shadow", "none");
-            $("#starcontrol").stop().fadeTo(150, 1);
-            $(".button").toggleClass("touchbutton");
-            $(".infobutton").toggleClass("hide");
-            $(".audiocontrol").toggleClass("hide");
-            usingTouch = true;
-        }
-    });
-
-    $(document).touchend(function() {
-        mouseDown = false;
-    });
-
-    $(document).touchmove(function(e) {
-        e.preventDefault();
-        var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
-        mouseX = touch.pageX;
-        mouseY = touch.pageY;
+    $(window).resize(function () {
+        viewportWidth = $(window).width();
+        viewportHeight = $(window).height();
+        origin = [];
+        origin["x"] = viewportWidth / 2;
+        origin["y"] = viewportHeight / 2;
+        canvas.setSize();
     });
 
     /**
-     * UI controls for togglable buttons.
-     *
-     * @this The button div being clicked.
+     * The starfield itself.
      */
-    $('.control-toggle').click(function() {
-        switch ($(this).attr("value")) {
-        case "rotation":
-            rotation = !rotation;
-            break;
-        case "audify":
-            audify = !audify;
-            break;
-        case "colorise":
-            colorise = !colorise;
-            break;
-        }
-
-        $(this).toggleClass("control-active");
-    });
-
-    /**
-     * UI controls for normal buttons.
-     *
-     * @this The button div being clicked.
-     */
-    $('.control-button').click(function() {
-        switch ($(this).attr("value")) {
-        // Starcount
-        case "starcount-add":
-            starcount = Math.floor(starcount * 1.61);
-            console.log(starcount);
-            canvas.createStarfield(starcount);
-            break;
-        case "starcount-sub":
-            starcount = Math.ceil(starcount / 1.61);
-            console.log(starcount);
-            canvas.createStarfield(starcount);
-            break;
-
-        // Speed factor
-        case "starspeed-add":
-            speedFactor *= 1.61;
-            console.log(speedFactor);
-            break;
-        case "starspeed-sub":
-            speedFactor /= 1.61;
-            console.log(speedFactor);
-            break;
-        }
-    });
-});
-
-/**
- * Resizes canvas and recenters origin when the browser window is resized.
- */
-$(window).resize(function() {
-    viewportWidth = $(window).width();
-    viewportHeight = $(window).height();
-    origin = [];
-    origin["x"] = viewportWidth / 2;
-    origin["y"] = viewportHeight / 2;
-    canvas.setSize();
-});
-
-/**
- * The starfield itself.
- */
-function Canvas() {
-    var canvas;
-    var context;
-    this.starlist = [];
-
-    this.init = function() {
+    function Canvas() {
+        this.starlist = [];
         this.canvas = document.getElementById('starfield');
 
         if (this.canvas.getContext) {
             this.context = this.canvas.getContext('2d');
             this.setSize();
         }
-    };
+
+        window.requestAnimFrame = (function () {
+            return window.requestAnimationFrame ||
+            window.webkitRequestAnimationFrame ||
+            window.mozRequestAnimationFrame ||
+            window.oRequestAnimationFrame ||
+            window.msRequestAnimationFrame ||
+            function (callback) {
+                window.setTimeout(callback, 1000 / 60);
+            };
+        })();
+    }
 
     /**
      * Sets the size of the canvas to be that of the browser window
      */
-    this.setSize = function() {
+    Canvas.prototype.setSize = function () {
         this.canvas.width  = $(window).width();
         this.canvas.height = $(window).height() - 5; // Hack around wrong height from jQuery
     };
@@ -203,12 +218,12 @@ function Canvas() {
     /**
      * Draws a single star. Currently stars are rects to save precious cycles.
      */
-    this.drawStar = function(star) {
+    Canvas.prototype.drawStar = function (star) {
         this.context.beginPath();
         this.context.fillStyle = "rgb(255, 255, 255)";
         // arc(x, y, radius, startAngle, endAngle, anticlockwise)
         //this.context.arc(star.xPos, star.yPos, star.radius, 0, Math.PI*2, true);
-        this.context.fillRect(star.xPos, star.yPos, star.radius, star.radius);
+        this.context.fillRect(star.xPos | 0, star.yPos | 0, star.radius, star.radius);
         this.context.closePath();
         this.context.fill();
     };
@@ -218,12 +233,20 @@ function Canvas() {
      *
      * @param starlist A list of stars to draw.
      */
-    this.drawStarfield = function(starlist) {
-        var i;
+    Canvas.prototype.drawStarfield = function () {
+        if (hyperspace) {
+            this.context.fillStyle = "rgba(0, 0, 0, 0.1)"; // Trails
+            this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        } else {
+            /* Speed up canvas clearing
+               http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing/6722031#6722031 */
+            this.context.save();
+            this.context.setTransform(1, 0, 0, 1, 0, 0);
+            this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            this.context.restore();
+        }
 
-        this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
-
-        for (i = 0; i < this.starlist.length; i++) {
+        for (var i = 0; i < this.starlist.length; i++) {
             this.drawStar(this.starlist[i]);
         }
     };
@@ -233,13 +256,12 @@ function Canvas() {
      *
      * @param starcount Number of stars to create.
      */
-    this.createStarfield = function(starcount) {
+    Canvas.prototype.createStarfield = function (starcount) {
         var i;
         this.starlist = []; // Reset starlist for starcount reduction
 
         for (i = 0; i < starcount; i++) {
             var star = new Star(i);
-            star.init();
             this.starlist[i] = star;
         }
     };
@@ -248,7 +270,7 @@ function Canvas() {
      * Iterates through this.starlist and updates their positions.
      * Also replaces them with new stars if they stray out of the viewport.
      */
-    this.updateStars = function() {
+    Canvas.prototype.updateStars = function () {
         var i;
         var star;
 
@@ -270,10 +292,7 @@ function Canvas() {
                     }
                 }
 
-                star = new Star(star.serial);
-                star.init();
-
-                this.starlist[star.serial] = star;
+                this.starlist[star.serial] = new Star(star.serial);
                 totalStarcount++;
             }
         }
@@ -283,7 +302,7 @@ function Canvas() {
      * Returns a HSV representation of the current 24-hour time.
      * Modified from colck.js
      */
-    this.timeToHsv = function(date) {
+    Canvas.prototype.timeToHsv = function (date) {
         var seconds = date.getSeconds();
         var minutes = date.getMinutes();
         var hours   = date.getHours();
@@ -295,80 +314,59 @@ function Canvas() {
         return [h, s, v];
     };
 
-    this.colorise = function() {
+    Canvas.prototype.colorise = function () {
         var hsvptr = this.timeToHsv;
         var defaultBodyColor = $("body").css("background-color");
 
-        setInterval(function() {
+        setInterval(function () {
             if (colorise) {
                 var date = new Date();
                 var hsv = hsvptr(date);
-                $("body").css("background-color", "hsl(" + hsv[0] + "," + hsv[1] + "," + hsv[2] + ")");
+                var style = "hsl(" + hsv[0] + "," + hsv[1] + "," + hsv[2] + ")";
+
+                if (hyperspace) {
+                    // For hyperspace flashes
+                    this.context.fillStyle = style;
+                    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                }
+
+                $("body").css("background-color", style);
             } else {
                 $("body").css("background-color", defaultBodyColor);
             }
-        }, 1000); // 1000 = 1s
+        }.bind(this), 1000); // 1000 = 1s
     };
 
     /**
      * The drawing loop. Draws a new starfield and updates stars.
      */
-    var ptr = this;
-    this.draw = function() {
-        //setInterval(function() {
-            ptr.drawStarfield();
-            ptr.updateStars();
-            window.requestAnimFrame(ptr.draw);
-        //}, 16); // 60fps ~= 16.667
+    Canvas.prototype.draw = function () {
+        this.updateStars();
+        this.drawStarfield();
+        window.requestAnimFrame(this.draw.bind(this));
     };
 
     /**
-     * window.requestAnimationFrame() shim
+     * Star object with attributes and audio functions.
      */
-    window.requestAnimFrame = (function(){
-      return  window.requestAnimationFrame       ||
-              window.webkitRequestAnimationFrame ||
-              window.mozRequestAnimationFrame    ||
-              window.oRequestAnimationFrame      ||
-              window.msRequestAnimationFrame     ||
-              function( callback ){
-                window.setTimeout(callback, 1000 / 60);
-              };
-    })();
-}
-
-/**
- * Star object with attributes and audio functions.
- */
-function Star(serial) {
-    this.serial        = serial; // 10032 is the worst
-    this.angle         = null;
-    this.distance      = null;
-    this.initialRadius = 2;
-    this.radius        = null;
-    this.dAngle        = null;
-    this.dDistance     = null;
-    this.d2Distance    = null;
-    this.dRadius       = null;
-    this.xPos          = null;
-    this.yPos          = null;
-
-    this.init = function() {
-        this.angle      = Math.random() * 360 / (Math.PI * 2); // Radians
-        this.distance   = Math.random() * 20 - 10 + viewportHeight / 25; // Initial distance from origin
-        this.radius     = this.initialRadius; // Initial size, radius is actually width/height of the now rect star
-        this.dAngle     = rotation ? 0.5 / (this.distance) + 0.025 : 0; // Spiral
-        this.dDistance  = (Math.random() * 10 + 5) * speedFactor; // Speed
-        this.d2Distance = Math.random() * 0.075 + 1.025; // Acceleration
-        this.dRadius    = Math.random() * this.dDistance / 20; // Slower stars are farther out so their sizes increase less
-        this.xPos       = origin["x"] + Math.cos(this.angle) * this.distance; // Initialise starting position
-        this.yPos       = origin["y"] - Math.sin(this.angle) * this.distance;
-    };
+    function Star(serial) {
+        this.serial        = serial; // 10032 is the worst
+        this.initialRadius = 2;
+        this.angle         = Math.random() * 360 / (Math.PI * 2); // Radians
+        this.distance      = Math.random() * 20 - 10 + viewportHeight / 25; // Initial distance from origin
+        this.radius        = this.initialRadius; // Initial size, radius is actually width/height of the now rect star
+        this.dAngle        = rotation ? 0.5 / (this.distance) + 0.025 : 0; // Spiral
+        this.dDistance     = (Math.random() * 10 + 5) * speedFactor; // Speed
+        this.d2Distance    = Math.random() * 0.075 + 1.025; // Acceleration
+        this.dRadius       = Math.random() * this.dDistance / 20; // Slower stars are farther out so their sizes increase less
+        this.xPos          = origin["x"] + Math.cos(this.angle) * this.distance; // Initialise starting position
+        this.yPos          = origin["y"] - Math.sin(this.angle) * this.distance;
+    }
 
     /**
      * Advances the star by one step.
      */
-    this.update = function() {
+    Star.prototype.update = function () {
         if (!mouseDown) {
             this.dDistance *= this.d2Distance;
             this.distance  += this.dDistance;
@@ -389,7 +387,7 @@ function Star(serial) {
      *
      * @param channel Which speaker to ping (left = 0, right = 1)
      */
-    this.audify = function(channel) {
+    Star.prototype.audify = function (channel) {
         var chords = {
             I:   [48, 52, 55, 60, 64, 67, 72],
             ii:  [50, 53, 57, 62, 65, 69, 74],
@@ -402,13 +400,13 @@ function Star(serial) {
 
         var chordMap = ['I', 'ii', 'iii', 'IV', 'vi', 'vii'];
 
-        var chordFrequency = starcount;
+        // var chordFrequency = starcount;
         var delay          = 0; // Play one note every quarter second
-        var maxNote        = 108;
-        var minNote        = 21;
+        // var maxNote        = 108;
+        // var minNote        = 21;
         var range          = 87 * Math.max(speedFactor, 1); // maxNote - minNote, affected by speed
         //var note           = Math.floor((this.xPos / viewportWidth) * range / 2 +
-//                             (this.serial + 1) / (starcount + 1) * (range * 4) / 2); // The MIDI note
+        //                      (this.serial + 1) / (starcount + 1) * (range * 4) / 2); // The MIDI note
         var note           = Math.floor(
             (((totalStarcount % starcount) + 1) / starcount) * range / 2 +
             (this.xPos / viewportWidth) * range / 2); // The MIDI note
@@ -425,4 +423,4 @@ function Star(serial) {
             MIDI.noteOff(channel, note, delay + 0.1);
         }
     };
-}
+}());

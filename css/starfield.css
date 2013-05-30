@@ -154,9 +154,8 @@ canvas {
 #control-button-starspeed-sub { background: url("../img/32/speeddown.png"); }
 #control-toggle-rotation { background: url("../img/32/rotate.png"); }
 #control-toggle-colorise { background: url("../img/32/colorise.png"); }
+#control-toggle-hyperspace { background: url("../img/32/hyperspace.png"); }
 #control-toggle-audify { background: url("../img/32/audify.png"); }
-#control-button-audify-add { background: url("../img/32/increasesamplesize.png"); }
-#control-button-audify-sub { background: url("../img/32/reducesamplesize.png"); }
 #info-button { background: url("../img/32/info.png"); }
 
 /**
