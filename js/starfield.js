@@ -221,11 +221,18 @@
     Canvas.prototype.drawStar = function (star) {
         this.context.beginPath();
         this.context.fillStyle = "rgb(255, 255, 255)";
-        // arc(x, y, radius, startAngle, endAngle, anticlockwise)
-        //this.context.arc(star.xPos, star.yPos, star.radius, 0, Math.PI*2, true);
-        this.context.fillRect(star.xPos | 0, star.yPos | 0, star.radius, star.radius);
-        this.context.closePath();
-        this.context.fill();
+
+        if (hyperspace) {
+            this.context.lineWidth = 2;
+            this.context.strokeStyle = '#FFFFFF';
+            this.context.moveTo(star.lastXPos, star.lastYPos);
+            this.context.lineTo(star.xPos, star.yPos);
+            this.context.stroke();
+        } else {
+            this.context.fillRect(star.xPos | 0, star.yPos | 0, star.radius, star.radius);
+            this.context.closePath();
+            this.context.fill();
+        }
     };
 
     /**
@@ -361,6 +368,8 @@
         this.dRadius       = Math.random() * this.dDistance / 20; // Slower stars are farther out so their sizes increase less
         this.xPos          = origin["x"] + Math.cos(this.angle) * this.distance; // Initialise starting position
         this.yPos          = origin["y"] - Math.sin(this.angle) * this.distance;
+        this.lastXPos      = this.xPos;
+        this.lastYPos      = this.yPos;
     }
 
     /**
@@ -372,10 +381,14 @@
             this.distance  += this.dDistance;
             this.angle     += this.dAngle;
             this.radius    += this.dRadius;
+            this.lastXPos   = this.xPos;
+            this.lastYPos   = this.yPos;
             this.xPos       = this.xPos + Math.cos(this.angle) * this.dDistance;
             this.yPos       = this.yPos - Math.sin(this.angle) * this.dDistance;
         } else {
             this.angle = Math.PI - Math.atan2(mouseX - this.xPos, mouseY - this.yPos);
+            this.lastXPos   = this.xPos;
+            this.lastYPos   = this.yPos;
             this.xPos  = this.xPos + Math.cos(this.angle) * this.dDistance;
             this.yPos  = this.yPos + Math.sin(this.angle) * this.dDistance;
         }
