@@ -242,8 +242,14 @@
      */
     Canvas.prototype.drawStarfield = function () {
         if (hyperspace) {
-            this.context.fillStyle = "rgba(0, 0, 0, 0.1)"; // Trails
+            // Trails, fade current canvas. We do this instead of just painting a 0.1 opacity black rect over the canvas
+            // because we want to preserve background transparancy for <body> background-color changes in colourise().
+            // This approach is considerably slower than just painting a black rect.
+            // In essence, we subtract 10% from the current canvas instead of adding 10% black over the canvas.
+            this.context.globalCompositeOperation = "destination-out";
+            this.context.fillStyle = "rgba(0, 0, 0, 0.1)";
             this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
+            this.context.globalCompositeOperation = "source-over";
         } else {
             /* Speed up canvas clearing
                http://stackoverflow.com/questions/2142535/how-to-clear-the-canvas-for-redrawing/6722031#6722031 */
@@ -331,12 +337,6 @@
                 var hsv = hsvptr(date);
                 var style = "hsl(" + hsv[0] + "," + hsv[1] + "," + hsv[2] + ")";
 
-                if (hyperspace) {
-                    // For hyperspace flashes
-                    this.context.fillStyle = style;
-                    this.context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-                }
-
                 $("body").css("background-color", style);
             } else {
                 $("body").css("background-color", defaultBodyColor);
@@ -360,7 +360,7 @@
         this.serial        = serial; // 10032 is the worst
         this.initialRadius = 2;
         this.angle         = Math.random() * 360 / (Math.PI * 2); // Radians
-        this.distance      = Math.random() * 20 - 10 + viewportHeight / 25; // Initial distance from origin
+        this.distance      = Math.random() * 20 - 10 + viewportHeight / 35; // Initial distance from origin
         this.radius        = this.initialRadius; // Initial size, radius is actually width/height of the now rect star
         this.dAngle        = rotation ? 0.5 / (this.distance) + 0.025 : 0; // Spiral
         this.dDistance     = (Math.random() * 10 + 5) * speedFactor; // Speed

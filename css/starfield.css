@@ -164,3 +164,7 @@ canvas {
 .hide {
     display: none;
 }
+
+.ui-loader {
+    display: none;
+}
