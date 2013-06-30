@@ -328,13 +328,12 @@
     };
 
     Canvas.prototype.colorise = function () {
-        var hsvptr = this.timeToHsv;
         var defaultBodyColor = $("body").css("background-color");
 
         setInterval(function () {
             if (colorise) {
                 var date = new Date();
-                var hsv = hsvptr(date);
+                var hsv = this.timeToHsv(date);
                 var style = "hsl(" + hsv[0] + "," + hsv[1] + "," + hsv[2] + ")";
 
                 $("body").css("background-color", style);
