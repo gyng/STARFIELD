@@ -30,6 +30,16 @@
     var mouseX;
     var mouseY;
 
+    // Audio elements
+    var audioElement;
+    var context;
+    var analyser;
+    var frequencyData;
+    var intensityOverTime = 100;
+
+    var avgFreqSum = 0;
+    var avgFreqSumSamples = 0;
+
     $(document).ready(function () {
         canvas = new Canvas();
         canvas.createStarfield(starcount);
@@ -37,12 +47,28 @@
         canvas.colorise();
 
         // MIDI.js
-        MIDI.loadPlugin({
-            soundfontUrl: "js/MIDI.js/soundfont/",
-            instrument: "acoustic_grand_piano",
-            callback: function () {
-                    MIDI.setVolume(0, 127);
-                }
+        // MIDI.loadPlugin({
+        //     soundfontUrl: "js/MIDI.js/soundfont/",
+        //     instrument: "acoustic_grand_piano",
+        //     callback: function () {
+        //             MIDI.setVolume(0, 127);
+        //         }
+        // });
+
+        audioElement = $("#audio-element").get(0);
+        if (typeof AudioContext !== "undefined") {
+            context = new AudioContext();
+        } else if (typeof webkitAudioContext !== "undefined") {
+            context = new webkitAudioContext();
+        }
+        analyser = context.createAnalyser();
+        analyser.fftSize = 64;
+        frequencyData = new Uint8Array(analyser.frequencyBinCount);
+
+        $("#audio-element").bind('canplay', function () {
+            var source = context.createMediaElementSource(this);
+            source.connect(analyser);
+            analyser.connect(context.destination);
         });
 
         /**
@@ -127,6 +153,17 @@
                 break;
             case "audify":
                 audify = !audify;
+                if (audify) {
+                    // TODO: Move out into a prototype
+                    var audioSource = $("#audio-element source");
+                    var audioURL = $("#audio-url").val();
+                    audioSource.attr("src", audioURL);
+                    audioElement.pause();
+                    audioElement.load();
+                    audioElement.play();
+                } else {
+                    audioElement.pause();
+                }
                 break;
             case "colorise":
                 colorise = !colorise;
@@ -284,11 +321,47 @@
      * Also replaces them with new stars if they stray out of the viewport.
      */
     Canvas.prototype.updateStars = function () {
-        var i;
-        var star;
+        if (audify) {
+            console.log(frequencyData);
+            analyser.getByteFrequencyData(frequencyData);
 
-        for (i = 0; i < this.starlist.length; i++) {
-            star = this.starlist[i];
+            var frequencyDataSum = 0;
+            for (var i = 0; i < frequencyData.length; i++) {
+                frequencyDataSum += frequencyData[i];
+            }
+
+            avgFreqSum = (avgFreqSum * avgFreqSumSamples + frequencyDataSum) / (avgFreqSumSamples + 1);
+            avgFreqSumSamples++;
+
+            if (frequencyDataSum > avgFreqSum * 1.1) {
+                intensityOverTime = Math.max(intensityOverTime - 0.00001, 100);
+            } else {
+                intensityOverTime = Math.min(intensityOverTime - 0.000005, 40);
+            }
+
+            if (frequencyDataSum > avgFreqSum * 1.3) {
+                mouseX = origin["x"];
+                mouseY = origin["y"];
+                mouseDown = true;
+            } else {
+                mouseDown = false;
+            }
+
+            if (intensityOverTime > 99) {
+                hyperspace = true;
+            } else {
+                hyperspace = false;
+            }
+
+        $("#visualisation").text("avgSum: " + avgFreqSum + ", curSum: " + frequencyDataSum + ", intensityOverTime: " + intensityOverTime);
+
+        } else {
+            intensityOverTime = 100;
+        }
+
+        var star;
+        for (var j = 0; j < this.starlist.length; j++) {
+            star = this.starlist[j];
             star.update();
 
             if (star.xPos < 0 - star.radius ||
@@ -296,17 +369,17 @@
                 star.yPos < 0 - star.radius ||
                 star.yPos > viewportHeight) {
 
-                // Replace star if it's out of viewport
-                if (audify) {
-                    if (star.xPos - origin["x"] < 0) {
-                        star.audify(0); // left
-                    } else {
-                        star.audify(1); // right
-                    }
+                if (this.starlist.length <= starcount) {
+                    this.starlist[star.serial] = new Star(star.serial);
+                    totalStarcount++;
                 }
+            }
 
-                this.starlist[star.serial] = new Star(star.serial);
-                totalStarcount++;
+            if (audify) {
+                if (frequencyData[star.serial % frequencyData.length] > avgFreqSum / analyser.fftSize * 1.5) {
+                    // This bin is made for me, and it's hot!
+                    star.radius = Math.min(star.radius * 1.05, 50);
+                }
             }
         }
     };
@@ -362,7 +435,7 @@
         this.distance      = Math.random() * 20 - 10 + viewportHeight / 35; // Initial distance from origin
         this.radius        = this.initialRadius; // Initial size, radius is actually width/height of the now rect star
         this.dAngle        = rotation ? 0.5 / (this.distance) + 0.025 : 0; // Spiral
-        this.dDistance     = (Math.random() * 10 + 5) * speedFactor; // Speed
+        this.dDistance     = (Math.random() * 10 + 5) * speedFactor * intensityOverTime / 20; // Speed
         this.d2Distance    = Math.random() * 0.075 + 1.025; // Acceleration
         this.dRadius       = Math.random() * this.dDistance / 20; // Slower stars are farther out so their sizes increase less
         this.xPos          = origin["x"] + Math.cos(this.angle) * this.distance; // Initialise starting position
