@@ -17,7 +17,7 @@
 
     // Starfield control parameters
     var rotation = false;
-    var starcount = 25;
+    var starcount = 64;
     var totalStarcount = starcount;
     var speedFactor = 0.1;
     var audify = false;
@@ -97,6 +97,7 @@
                     // Throws an `InvalidStateError: DOM Exception 11` because we can only start() and stop() a source once (I think)
                     // Ways around it might be to try recreating the AudioContext again (I tried but failed)
                     // Or figure out how to dynamically change the source on the fly
+                    updateFragmentURL();
                 } else {
                     // audio.audioElement.pause();
                 }
@@ -274,7 +275,6 @@
             hyperspace = audio.intensity > 99;
             colorise = audio.intensityOverTime > 85 || audio.intensityOverTime < -85;
         }
-
         var star;
         for (var j = 0; j < this.starlist.length; j++) {
             star = this.starlist[j];
@@ -294,7 +294,7 @@
             if (audify && audio.loaded) {
                 if (audio.frequencyData[star.serial % audio.frequencyData.length] > audio.avgFreqSum / audio.analyser.fftSize * 1.1) {
                     // This bin is made for me, and it's hot!
-                    star.radius = Math.min(star.radius * 1.05 + 0.05, 60);
+                    star.radius = Math.min(star.radius * 1.05, 60);
                 }
             }
         }
@@ -373,11 +373,11 @@
             this.xPos       = this.xPos + Math.cos(this.angle) * this.dDistance;
             this.yPos       = this.yPos - Math.sin(this.angle) * this.dDistance;
         } else {
-            this.angle = Math.PI - Math.atan2(mouseX - this.xPos, mouseY - this.yPos);
+            this.angle      = Math.PI - Math.atan2(mouseX - this.xPos, mouseY - this.yPos);
             this.lastXPos   = this.xPos;
             this.lastYPos   = this.yPos;
-            this.xPos  = this.xPos + Math.cos(this.angle) * this.dDistance;
-            this.yPos  = this.yPos + Math.sin(this.angle) * this.dDistance;
+            this.xPos       = this.xPos + Math.cos(this.angle) * this.dDistance * (audio.loaded ? audio.intensityOverTime / -20 : 1);
+            this.yPos       = this.yPos + Math.sin(this.angle) * this.dDistance * (audio.loaded ? audio.intensityOverTime / -20 : 1);
         }
     };
 
@@ -440,7 +440,7 @@
         this.intensity = (this.frequencyDataSum > this.avgFreqSum * 1.1) ? 100 : - 100;
         this.intensityOverTime = Math.max(Math.min(this.intensityOverTime + (this.intensity / 2000), 100), -100);
 
-        $("#visualisation").text("avgSum: " + parseInt(this.avgFreqSum) + ", curSum: " + parseInt(this.frequencyDataSum) + ", int/dt: " + parseInt(this.intensityOverTime) + ", int: " + this.intensity);
+        // $("#visualisation").text("avgSum: " + parseInt(this.avgFreqSum) + ", curSum: " + parseInt(this.frequencyDataSum) + ", int/dt: " + parseInt(this.intensityOverTime) + ", int: " + this.intensity);
     };
 
     function updateSource() {
@@ -456,6 +456,11 @@
             audify = true;
             $("#control-toggle-audify").toggleClass("control-active", true);
         }
+    }
+
+    function updateFragmentURL(url) {
+        url = url || $("#audio-url").val();
+        window.location.hash = "!" + url;
     }
 
     function shareVisualisation() {
