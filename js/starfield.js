@@ -459,6 +459,6 @@
     }
 
     function shareVisualisation() {
-        window.prompt("Here's your h-h-hyperlink!", document.URL + "!+" + $("#audio-url").val());
+        window.prompt("Here's your h-h-hyperlink!", document.URL + "#!" + $("#audio-url").val());
     }
 }());
