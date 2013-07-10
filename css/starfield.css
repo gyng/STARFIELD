@@ -30,6 +30,35 @@ canvas {
     font-size: 36px;
 }
 
+input {
+    height: 40px;
+    margin: 5px 0;
+    padding: 0 0 0 5px;
+    background-color: #222;
+    color: #FFF;
+    border: 0px;
+    border-radius: 5px;
+}
+
+input:focus {
+    border-color: #3EC6D8;
+}
+
+audio {
+    width: 250px;
+}
+
+a {
+    width: 100%;
+    height: 100%;
+    color: white;
+    text-align: center;
+}
+
+a:visited {
+    color: white;
+}
+
 /**
 * Set cursor to a hand to indicate an interactable canvas. Toggled in JS.
 */
@@ -59,13 +88,17 @@ canvas {
     position: fixed;
     left: 5px;
     top: 5px;
-    padding: 40px 60px 40px 20px;
+    padding: 40px 20px 40px 20px;
 }
 
 #starcontrol-glow {
     padding: 5px;
     border-radius: 5px;
-    box-shadow: 0 0 10px #3EC6D8;
+    width: 45px;
+}
+
+#starcontrol-audify {
+    padding: 0 5px;
 }
 
 /**
@@ -79,8 +112,8 @@ canvas {
  * Button setting style.
  */
 .button {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
     padding: 10px;
     margin: 5px;
     background-color: #222 !important; /* inactive assumed if not active */
@@ -89,33 +122,8 @@ canvas {
     background-size: 80% !important;
     border-radius: 3px;
     cursor: pointer;
-}
-
-/**
- * Enlarged buttons for use when touch is detected
- */
-.touchbutton {
-    width: 48px !important;
-    height: 48px !important;
-    padding: 10px !important;
-    margin: 25px !important;
-    border-radius: 16px !important;
-}
-
-/**
- * Infobutton style. A duplicate of .button, but without the related :hover and :adtive styles
- */
-.infobutton {
-    width: 16px;
-    height: 16px;
-    padding: 10px;
-    margin: 5px;
-    background-color: #222 !important; /* inactive assumed if not active */
-    background-position: center !important;
-    background-repeat: no-repeat !important;
-    background-size: 80% !important;
-    border-radius: 3px;
-    cursor: help;
+    color: white;
+    text-align: center;
 }
 
 /**
@@ -144,27 +152,12 @@ canvas {
 
 
 /**
-* @section Setting button icons.
-*          Sprites are not used because they are a bitch to set up and style correctly.
-*/
-
-#control-button-starcount-add { background: url("../img/32/add.png"); }
-#control-button-starcount-sub { background: url("../img/32/subtract.png"); }
-#control-button-starspeed-add { background: url("../img/32/speedup.png"); }
-#control-button-starspeed-sub { background: url("../img/32/speeddown.png"); }
-#control-toggle-rotation { background: url("../img/32/rotate.png"); }
-#control-toggle-colorise { background: url("../img/32/colorise.png"); }
-#control-toggle-hyperspace { background: url("../img/32/hyperspace.png"); }
-#control-toggle-audify { background: url("../img/32/audify.png"); }
-#info-button { background: url("../img/32/info.png"); }
-
-/**
  * Hiding class
  */
 .hide {
     display: none;
 }
 
-.ui-loader {
-    display: none;
+.float {
+    float: left;
 }

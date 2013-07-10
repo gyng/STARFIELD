@@ -1,5 +1,5 @@
 /* jshint browser: true */
-/* global document, window, $, MIDI, console */
+/* global document, window, $, console, AudioContext, webkitAudioContext */
 
 /**
 * @file starfield.css
@@ -26,50 +26,18 @@
 
     // Mouse variables
     var mouseDown = false;
-    var usingTouch = false;
     var mouseX;
     var mouseY;
 
-    // Audio elements
-    var audioElement;
-    var context;
-    var analyser;
-    var frequencyData;
-    var intensityOverTime = 100;
-
-    var avgFreqSum = 0;
-    var avgFreqSumSamples = 0;
+    var audio;
 
     $(document).ready(function () {
+        loadAudioSourceFragmentURL();
+        audio = new Audio($("#audio-element"));
         canvas = new Canvas();
         canvas.createStarfield(starcount);
         canvas.draw();
         canvas.colorise();
-
-        // MIDI.js
-        // MIDI.loadPlugin({
-        //     soundfontUrl: "js/MIDI.js/soundfont/",
-        //     instrument: "acoustic_grand_piano",
-        //     callback: function () {
-        //             MIDI.setVolume(0, 127);
-        //         }
-        // });
-
-        audioElement = $("#audio-element").get(0);
-        if (typeof AudioContext !== "undefined") {
-            context = new AudioContext();
-        } else if (typeof webkitAudioContext !== "undefined") {
-            context = new webkitAudioContext();
-        }
-        analyser = context.createAnalyser();
-        analyser.fftSize = 64;
-        frequencyData = new Uint8Array(analyser.frequencyBinCount);
-
-        $("#audio-element").bind('canplay', function () {
-            var source = context.createMediaElementSource(this);
-            source.connect(analyser);
-            analyser.connect(context.destination);
-        });
 
         /**
          * Fades the settings box out on load.
@@ -112,36 +80,6 @@
         });
 
         /**
-         * Touch events
-         */
-        $('#starfield').touchstart(function (e) {
-            var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
-            mouseX = touch.pageX;
-            mouseY = touch.pageY;
-            mouseDown = true;
-
-            if (!usingTouch) {
-                $("#starcontrol-glow").css("box-shadow", "none");
-                $("#starcontrol").stop().fadeTo(150, 1);
-                $(".button").toggleClass("touchbutton");
-                $(".infobutton").toggleClass("hide");
-                $(".audiocontrol").toggleClass("hide");
-                usingTouch = true;
-            }
-        });
-
-        $(document).touchend(function () {
-            mouseDown = false;
-        });
-
-        $(document).touchmove(function (e) {
-            e.preventDefault();
-            var touch = e.originalEvent.touches[0] || e.originalEvent.changedTouches[0];
-            mouseX = touch.pageX;
-            mouseY = touch.pageY;
-        });
-
-        /**
          * UI controls for togglable buttons.
          *
          * @this The button div being clicked.
@@ -152,24 +90,22 @@
                 rotation = !rotation;
                 break;
             case "audify":
-                audify = !audify;
-                if (audify) {
-                    // TODO: Move out into a prototype
-                    var audioSource = $("#audio-element source");
-                    var audioURL = $("#audio-url").val();
-                    audioSource.attr("src", audioURL);
-                    audioElement.pause();
-                    audioElement.load();
-                    audioElement.play();
+                audify = audify ? false : true;
+                if (audify && audio.loaded) {
+                    updateSource();
+                    audio.audioElement.load(); // Updates <audio>'s source URL
+                    // Throws an `InvalidStateError: DOM Exception 11` because we can only start() and stop() a source once (I think)
+                    // Ways around it might be to try recreating the AudioContext again (I tried but failed)
+                    // Or figure out how to dynamically change the source on the fly
                 } else {
-                    audioElement.pause();
+                    // audio.audioElement.pause();
                 }
                 break;
             case "colorise":
-                colorise = !colorise;
+                colorise = colorise ? false : true;
                 break;
             case "hyperspace":
-                hyperspace = !hyperspace;
+                hyperspace = hyperspace ? false : true;
                 break;
             }
 
@@ -203,6 +139,9 @@
             case "starspeed-sub":
                 speedFactor /= 1.61;
                 console.log(speedFactor);
+                break;
+            case "share":
+                shareVisualisation();
                 break;
             }
         });
@@ -321,25 +260,10 @@
      * Also replaces them with new stars if they stray out of the viewport.
      */
     Canvas.prototype.updateStars = function () {
-        if (audify) {
-            console.log(frequencyData);
-            analyser.getByteFrequencyData(frequencyData);
+        if (audify && audio.loaded) {
+            audio.update();
 
-            var frequencyDataSum = 0;
-            for (var i = 0; i < frequencyData.length; i++) {
-                frequencyDataSum += frequencyData[i];
-            }
-
-            avgFreqSum = (avgFreqSum * avgFreqSumSamples + frequencyDataSum) / (avgFreqSumSamples + 1);
-            avgFreqSumSamples++;
-
-            if (frequencyDataSum > avgFreqSum * 1.1) {
-                intensityOverTime = Math.max(intensityOverTime - 0.00001, 100);
-            } else {
-                intensityOverTime = Math.min(intensityOverTime - 0.000005, 40);
-            }
-
-            if (frequencyDataSum > avgFreqSum * 1.3) {
+            if (audio.frequencyDataSum > audio.avgFreqSum * 1.3) {
                 mouseX = origin["x"];
                 mouseY = origin["y"];
                 mouseDown = true;
@@ -347,16 +271,8 @@
                 mouseDown = false;
             }
 
-            if (intensityOverTime > 99) {
-                hyperspace = true;
-            } else {
-                hyperspace = false;
-            }
-
-        $("#visualisation").text("avgSum: " + avgFreqSum + ", curSum: " + frequencyDataSum + ", intensityOverTime: " + intensityOverTime);
-
-        } else {
-            intensityOverTime = 100;
+            hyperspace = audio.intensity > 99;
+            colorise = audio.intensityOverTime > 85 || audio.intensityOverTime < -85;
         }
 
         var star;
@@ -375,10 +291,10 @@
                 }
             }
 
-            if (audify) {
-                if (frequencyData[star.serial % frequencyData.length] > avgFreqSum / analyser.fftSize * 1.5) {
+            if (audify && audio.loaded) {
+                if (audio.frequencyData[star.serial % audio.frequencyData.length] > audio.avgFreqSum / audio.analyser.fftSize * 1.1) {
                     // This bin is made for me, and it's hot!
-                    star.radius = Math.min(star.radius * 1.05, 50);
+                    star.radius = Math.min(star.radius * 1.05 + 0.05, 60);
                 }
             }
         }
@@ -386,7 +302,6 @@
 
     /**
      * Returns a HSV representation of the current 24-hour time.
-     * Modified from colck.js
      */
     Canvas.prototype.timeToHsv = function (date) {
         var seconds = date.getSeconds();
@@ -420,7 +335,7 @@
      * The drawing loop. Draws a new starfield and updates stars.
      */
     Canvas.prototype.draw = function () {
-        this.updateStars();
+        this.updateStars(audio.intensityOverTime);
         this.drawStarfield();
         window.requestAnimFrame(this.draw.bind(this));
     };
@@ -435,7 +350,7 @@
         this.distance      = Math.random() * 20 - 10 + viewportHeight / 35; // Initial distance from origin
         this.radius        = this.initialRadius; // Initial size, radius is actually width/height of the now rect star
         this.dAngle        = rotation ? 0.5 / (this.distance) + 0.025 : 0; // Spiral
-        this.dDistance     = (Math.random() * 10 + 5) * speedFactor * intensityOverTime / 20; // Speed
+        this.dDistance     = (Math.random() * 10 + 5) * speedFactor; // Speed
         this.d2Distance    = Math.random() * 0.075 + 1.025; // Acceleration
         this.dRadius       = Math.random() * this.dDistance / 20; // Slower stars are farther out so their sizes increase less
         this.xPos          = origin["x"] + Math.cos(this.angle) * this.distance; // Initialise starting position
@@ -447,9 +362,9 @@
     /**
      * Advances the star by one step.
      */
-    Star.prototype.update = function () {
+    Star.prototype.update = function (intensityOverTime) {
         if (!mouseDown) {
-            this.dDistance *= this.d2Distance;
+            this.dDistance *= this.d2Distance * (typeof intensityOverTime === 'undefined' ? 1 : (intensityOverTime + 101) / 15);
             this.distance  += this.dDistance;
             this.angle     += this.dAngle;
             this.radius    += this.dRadius;
@@ -467,45 +382,83 @@
     };
 
     /**
-     * Beeps or boops according to the position and size of the star.
-     * Uses MIDI.js
+     * Handles all web audio-related stuff.
      *
-     * @param channel Which speaker to ping (left = 0, right = 1)
+     * Takes in a jQuery object representing the audio element.
      */
-    Star.prototype.audify = function (channel) {
-        var chords = {
-            I:   [48, 52, 55, 60, 64, 67, 72],
-            ii:  [50, 53, 57, 62, 65, 69, 74],
-            iii: [52, 55, 59, 64, 67, 71, 76],
-            IV:  [41, 45, 48, 53, 57, 60, 65],
-            V:   [43, 47, 50, 55, 59, 62, 67],
-            vi:  [45, 48, 52, 57, 60, 64, 69],
-            vii: [47, 50, 53, 59, 62, 65, 71]
-        };
+    function Audio(audioElement) {
+        this.loaded = false;
 
-        var chordMap = ['I', 'ii', 'iii', 'IV', 'vi', 'vii'];
-
-        // var chordFrequency = starcount;
-        var delay          = 0; // Play one note every quarter second
-        // var maxNote        = 108;
-        // var minNote        = 21;
-        var range          = 87 * Math.max(speedFactor, 1); // maxNote - minNote, affected by speed
-        //var note           = Math.floor((this.xPos / viewportWidth) * range / 2 +
-        //                      (this.serial + 1) / (starcount + 1) * (range * 4) / 2); // The MIDI note
-        var note           = Math.floor(
-            (((totalStarcount % starcount) + 1) / starcount) * range / 2 +
-            (this.xPos / viewportWidth) * range / 2); // The MIDI note
-        var velocity       = Math.max(Math.min(400 * speedFactor, 300), 50); // How hard the note hits
-
-        if (totalStarcount % starcount === 0) {
-            var l = chordMap.length;
-            var chord = chords[chordMap[((totalStarcount * 1.1) ^ l) % (l - 1)]];
-            MIDI.chordOn(channel, chord, velocity, delay);
-            MIDI.chordOff(channel, chord, delay + 1);
+        if (typeof AudioContext !== "undefined") {
+            this.context = new AudioContext();
+        } else if (typeof webkitAudioContext !== "undefined") {
+            this.context = new webkitAudioContext();
         } else {
-            // Play the note
-            MIDI.noteOn(channel, note, velocity, delay);
-            MIDI.noteOff(channel, note, delay + 0.1);
+            console.log("Web Audio API not supported. Try Firefox >= 23 (not tested), Chrome >= 28 (older versions not tested), or Opera >= 15 (not tested)");
+            console.log("Check out http://caniuse.com/audio-api");
+            return;
         }
+
+        this.audioElement     = audioElement.get(0);
+        this.analyser         = this.context.createAnalyser();
+        this.analyser.fftSize = 64;
+        this.frequencyData    = new Uint8Array(this.analyser.frequencyBinCount);
+        this.source           = null; // Initialised when audio element receives 'loadeddata' event
+
+
+        // Visualisation variables
+        this.frequencyDataSum  = 0;
+        this.intensityOverTime = 0;
+        this.intensity         = 0;
+        this.avgFreqSum        = 0;
+        this.avgFreqSumSamples = 0;
+
+        audioElement.bind('loadeddata', function () {
+            if (typeof source === 'undefined') {
+                this.source = this.context.createMediaElementSource(this.audioElement);
+                this.source.connect(this.analyser);
+                this.analyser.connect(this.context.destination);
+                this.audioElement.play();
+            }
+        }.bind(this));
+
+        this.loaded = true;
+    }
+
+    Audio.prototype.update = function () {
+        this.analyser.getByteFrequencyData(this.frequencyData);
+
+        // Can't reduce a TypedArray
+        this.frequencyDataSum = 0;
+        for (var i = 0; i < this.frequencyData.length; i++) {
+            this.frequencyDataSum += this.frequencyData[i];
+        }
+
+        this.avgFreqSum = (this.avgFreqSum * this.avgFreqSumSamples + this.frequencyDataSum) / (this.avgFreqSumSamples + 1);
+        this.avgFreqSumSamples++;
+
+        this.intensity = (this.frequencyDataSum > this.avgFreqSum * 1.1) ? 100 : - 100;
+        this.intensityOverTime = Math.max(Math.min(this.intensityOverTime + (this.intensity / 2000), 100), -100);
+
+        $("#visualisation").text("avgSum: " + parseInt(this.avgFreqSum) + ", curSum: " + parseInt(this.frequencyDataSum) + ", int/dt: " + parseInt(this.intensityOverTime) + ", int: " + this.intensity);
     };
+
+    function updateSource() {
+        var audioSource = $("#audio-element source");
+        var audioURL = $("#audio-url").val();
+        audioSource.attr("src", audioURL);
+    }
+
+    function loadAudioSourceFragmentURL() {
+        if (window.location.hash) {
+            $("#audio-url").val(window.location.hash.substring(2));
+            updateSource();
+            audify = true;
+            $("#control-toggle-audify").toggleClass("control-active", true);
+        }
+    }
+
+    function shareVisualisation() {
+        window.prompt("Here's your h-h-hyperlink!", document.URL + "!+" + $("#audio-url").val());
+    }
 }());
