@@ -376,8 +376,8 @@
             this.angle      = Math.PI - Math.atan2(mouseX - this.xPos, mouseY - this.yPos);
             this.lastXPos   = this.xPos;
             this.lastYPos   = this.yPos;
-            this.xPos       = this.xPos + Math.cos(this.angle) * this.dDistance * (audio.loaded ? audio.intensityOverTime / -20 : 1);
-            this.yPos       = this.yPos + Math.sin(this.angle) * this.dDistance * (audio.loaded ? audio.intensityOverTime / -20 : 1);
+            this.xPos       = this.xPos + Math.cos(this.angle) * this.dDistance * speedFactor * (audio.loaded ? audio.intensityOverTime / -2 : 10);
+            this.yPos       = this.yPos + Math.sin(this.angle) * this.dDistance * speedFactor * (audio.loaded ? audio.intensityOverTime / -2 : 10);
         }
     };
 
