@@ -54,31 +54,47 @@
             $(this).fadeTo(500, 0);
         });
 
+        $("#starcontrol").bind('touchenter', function () {
+            $(this).stop().fadeTo(250, 1);
+            $("#starcontrol-glow").css("box-shadow", "none");
+        });
+
         /**
-         * Mouse controls.
+         * Controls.
          */
-        $('#starfield').mousedown(function (e) {
+        $('#starfield').bind('mousedown touchstart', function (e) {
             e.originalEvent.preventDefault(); // Hack to bypass Chrome's cursor changing to text-select on drag
             $("#starfield").addClass("grabbing");
             $("#starfield").removeClass("grabbable");
-            mouseX = e.pageX;
-            mouseY = e.pageY;
-            mouseDown = true;
-        });
 
-        $(document).mouseup(function () {
-            $("#starfield").addClass("grabbable");
-            $("#starfield").removeClass("grabbing");
-            mouseDown = false;
-        });
-
-        $(document).mousemove(function (e) {
             if (e.pageX) {
                 mouseX = e.pageX;
                 mouseY = e.pageY;
+            } else if (e.originalEvent.touches[0].pageX) {
+                mouseX = e.originalEvent.touches[0].pageX;
+                mouseY = e.originalEvent.touches[0].pageY;
             }
+
+            mouseDown = true;
         });
 
+        $(document).bind('mouseup touchend touchcancel touchleave', function () {
+            $("#starfield").addClass("grabbable");
+            $("#starfield").removeClass("grabbing");
+            mouseDown = false;
+            console.log(mouseDown);
+        });
+
+        $(document).bind('mousemove touchmove', function (e) {
+            if (e.pageX) {
+                mouseX = e.pageX;
+                mouseY = e.pageY;
+            } else if (e.originalEvent.touches[0].pageX) {
+                mouseX = e.originalEvent.touches[0].pageX;
+                mouseY = e.originalEvent.touches[0].pageY;
+            }
+
+        });
         /**
          * UI controls for togglable buttons.
          *
@@ -91,7 +107,7 @@
                 break;
             case "audify":
                 audify = audify ? false : true;
-                if (audify && audio.loaded) {
+                if (audify && typeof audio !== 'undefined') {
                     updateSource();
                     audio.audioElement.load(); // Updates <audio>'s source URL
                     // Throws an `InvalidStateError: DOM Exception 11` because we can only start() and stop() a source once (I think)
@@ -396,7 +412,7 @@
         } else {
             console.log("Web Audio API not supported. Try Firefox >= 23 (not tested), Chrome >= 28 (older versions not tested), or Opera >= 15 (not tested)");
             console.log("Check out http://caniuse.com/audio-api");
-            return;
+            return void 0;
         }
 
         this.audioElement     = audioElement.get(0);
@@ -419,10 +435,9 @@
                 this.source.connect(this.analyser);
                 this.analyser.connect(this.context.destination);
                 this.audioElement.play();
+                this.loaded = true;
             }
         }.bind(this));
-
-        this.loaded = true;
     }
 
     Audio.prototype.update = function () {

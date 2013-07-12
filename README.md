@@ -1,7 +1,8 @@
 # STARFIELD
 
 ## Introduction
-STARFIELD is a HTML5 + JavaScript experiment, and is a sensational audio-visual starfield.
+A sensational audio-visual starfield. <br>
+STARFIELD is a HTML5 + JavaScript experiment.
 
 ## Installation
 1. Clone this repository.
