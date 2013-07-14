@@ -82,7 +82,6 @@
             $("#starfield").addClass("grabbable");
             $("#starfield").removeClass("grabbing");
             mouseDown = false;
-            console.log(mouseDown);
         });
 
         $(document).bind('mousemove touchmove', function (e) {
@@ -93,8 +92,8 @@
                 mouseX = e.originalEvent.touches[0].pageX;
                 mouseY = e.originalEvent.touches[0].pageY;
             }
-
         });
+
         /**
          * UI controls for togglable buttons.
          *
@@ -280,7 +279,7 @@
         if (audify && audio.loaded) {
             audio.update();
 
-            if (audio.frequencyDataSum > audio.avgFreqSum * 1.3) {
+            if (audio.frequencyDataSum > audio.slidingAvgFreqSum + audio.stdDev) {
                 mouseX = origin["x"];
                 mouseY = origin["y"];
                 mouseDown = true;
@@ -308,7 +307,7 @@
             }
 
             if (audify && audio.loaded) {
-                if (audio.frequencyData[star.serial % audio.frequencyData.length] > audio.avgFreqSum / audio.analyser.fftSize * 1.1) {
+                if (audio.frequencyData[star.serial % audio.frequencyData.length] > audio.slidingAvgFreqSum / audio.analyser.fftSize * 1.1) {
                     // This bin is made for me, and it's hot!
                     star.radius = Math.min(star.radius * 1.05, 60);
                 }
@@ -380,7 +379,7 @@
      */
     Star.prototype.update = function (intensityOverTime) {
         if (!mouseDown) {
-            this.dDistance *= this.d2Distance * (typeof intensityOverTime === 'undefined' ? 1 : (intensityOverTime + 101) / 15);
+            this.dDistance *= this.d2Distance * (typeof intensityOverTime === 'undefined' ? 1 : (intensityOverTime + 101) / 25);
             this.distance  += this.dDistance;
             this.angle     += this.dAngle;
             this.radius    += this.dRadius;
@@ -392,8 +391,8 @@
             this.angle      = Math.PI - Math.atan2(mouseX - this.xPos, mouseY - this.yPos);
             this.lastXPos   = this.xPos;
             this.lastYPos   = this.yPos;
-            this.xPos       = this.xPos + Math.cos(this.angle) * this.dDistance * speedFactor * (audio.loaded ? audio.frequencyDataSum * 25 / audio.avgFreqSum : 10);
-            this.yPos       = this.yPos + Math.sin(this.angle) * this.dDistance * speedFactor * (audio.loaded ? audio.frequencyDataSum * 25 / audio.avgFreqSum : 10);
+            this.xPos       = this.xPos + Math.cos(this.angle) * this.dDistance * speedFactor * (audio.loaded ? 5 + audio.frequencyDataSum * 50 / audio.slidingAvgFreqSum : 10);
+            this.yPos       = this.yPos + Math.sin(this.angle) * this.dDistance * speedFactor * (audio.loaded ? 5 + audio.frequencyDataSum * 50 / audio.slidingAvgFreqSum : 10);
         }
     };
 
@@ -410,7 +409,7 @@
         } else if (typeof webkitAudioContext !== "undefined") {
             this.context = new webkitAudioContext();
         } else {
-            console.log("Web Audio API not supported. Try Firefox >= 23 (not tested), Chrome >= 28 (older versions not tested), or Opera >= 15 (not tested)");
+            console.log("Web Audio API not supported. Try Chrome >= 28, Firefox >= 23, or Opera >=15. (both FF & Opera untested).");
             console.log("Check out http://caniuse.com/audio-api");
             return void 0;
         }
@@ -419,15 +418,22 @@
         this.analyser         = this.context.createAnalyser();
         this.analyser.fftSize = 64;
         this.frequencyData    = new Uint8Array(this.analyser.frequencyBinCount);
-        this.source           = null; // Initialised when audio element receives 'loadeddata' event
-
+        this.source           = void 0; // Initialised when audio element receives 'loadeddata' event
 
         // Visualisation variables
         this.frequencyDataSum  = 0;
         this.intensityOverTime = 0;
         this.intensity         = 0;
-        this.avgFreqSum        = 0;
-        this.avgFreqSumSamples = 0;
+        this.stdDev            = 0;
+
+        // Sliding window
+        this.slidingWindowMaxSize = 60;
+        this.slidingAvgFreq       = [0];
+        this.slidingAvgFreqSum    = 0;
+
+        this.currentWindowMaxSlices    = 60;
+        this.currentWindowSlice        = 0;
+        this.currentWindowSliceSamples = 0;
 
         audioElement.bind('loadeddata', function () {
             if (typeof source === 'undefined') {
@@ -443,19 +449,45 @@
     Audio.prototype.update = function () {
         this.analyser.getByteFrequencyData(this.frequencyData);
 
-        // Can't reduce a TypedArray
+        // Current frequency sum (can't reduce a typed array)
         this.frequencyDataSum = 0;
         for (var i = 0; i < this.frequencyData.length; i++) {
             this.frequencyDataSum += this.frequencyData[i];
         }
 
-        this.avgFreqSum = (this.avgFreqSum * this.avgFreqSumSamples + this.frequencyDataSum) / (this.avgFreqSumSamples + 1);
-        this.avgFreqSumSamples++;
+        // Current window slice sum
+        this.currentWindowSlice += this.frequencyDataSum;
+        this.currentWindowSliceSamples++;
 
-        this.intensity = (this.frequencyDataSum > this.avgFreqSum * 1.1) ? 100 : - 100;
+        // Add/remove sliding window if needed
+        if (this.currentWindowSliceSamples >= this.currentWindowMaxSlices) {
+            this.slidingAvgFreq.splice(0, this.slidingAvgFreq.length - this.slidingWindowMaxSize + 1);
+            this.slidingAvgFreq.push(Math.floor(this.currentWindowSlice / this.currentWindowSliceSamples));
+            this.currentWindowSlice = 0;
+            this.currentWindowSliceSamples = 0;
+        }
+
+        var slidingWindowSum = this.slidingAvgFreq.reduce(function (previous, current) { return previous + current; });
+        var slidingWindowMean = slidingWindowSum / this.slidingAvgFreq.length;
+
+        // Variance of sliding window contents
+        var diffSum = this.slidingAvgFreq.reduce(function (previous, current) { return previous + Math.pow(current - slidingWindowMean, 2); });
+        this.stdDev = Math.sqrt(diffSum / this.slidingAvgFreq.length);
+        this.slidingAvgFreqSum = slidingWindowSum / this.slidingAvgFreq.length;
+
+        this.intensity = (this.frequencyDataSum > this.slidingAvgFreqSum + this.stdDev * 0.1) ? 100 : - 100;
         this.intensityOverTime = Math.max(Math.min(this.intensityOverTime + (this.intensity / 2000), 100), -100);
 
-        // $("#visualisation").text("avgSum: " + parseInt(this.avgFreqSum) + ", curSum: " + parseInt(this.frequencyDataSum) + ", int/dt: " + parseInt(this.intensityOverTime) + ", int: " + this.intensity);
+        /*
+        $("#visualisation").text(
+            "slidingAvgSum: " + parseInt(this.slidingAvgFreqSum) +
+            ", curSum: " + parseInt(this.frequencyDataSum) +
+            ", int/dt: " + parseInt(this.intensityOverTime) +
+            ", int: " + this.intensity +
+            ", curSlice: " + this.currentWindowSlice +
+            ", curSliceSamples: " + this.currentWindowSliceSamples +
+            ", stdDev: " + this.stdDev);
+        */
     };
 
     function updateSource() {

@@ -161,3 +161,11 @@ a:visited {
 .float {
     float: left;
 }
+
+/**
+ * Debug
+ */
+
+ #visualisation {
+    color: white;
+ }
