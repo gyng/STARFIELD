@@ -149,10 +149,12 @@ a:visited {
     box-shadow: 0 0 10px #3EC6D8;
 }
 
-
+#control-info {
+    width: 20px;
+}
 
 /**
- * Hiding class
+ * Utility
  */
 .hide {
     display: none;
@@ -162,10 +164,7 @@ a:visited {
     float: left;
 }
 
-/**
- * Debug
- */
-
- #visualisation {
+ #debug {
+    display: none;
     color: white;
  }
