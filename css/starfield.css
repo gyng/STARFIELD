@@ -91,6 +91,11 @@ a:visited {
     padding: 40px 20px 40px 20px;
 }
 
+#starcontrol:hover {
+    opacity: 1;
+    transition: all 0.2s;
+}
+
 #starcontrol-glow {
     padding: 5px;
     border-radius: 5px;
@@ -141,6 +146,12 @@ a:visited {
     box-shadow: 0 0 10px #3EC6D8;
 }
 
+.touch-control {
+    width: 34px;
+    height: 34px;
+    font-size: 32px;
+}
+
 /**
  * Style for active toggled buttons.
  */
@@ -168,3 +179,8 @@ a:visited {
     display: none;
     color: white;
  }
+
+ .fade {
+    opacity: 0;
+    transition: all 2.5s;
+}

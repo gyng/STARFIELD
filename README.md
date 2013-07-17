@@ -17,6 +17,8 @@ To use the visualisation:
 1. Input audio file location into the input box. This can be a static .ogg/.mp3 file, a radio stream, or a local file (`file:///`). Local files will only be read if STARFIELD is run locally.
 2. Click the audio button.
 
+Or, directly link to a visualisation by appending `#!<URL>`.
+
 NB. Rotation, colourise, and hyperspace options are over-ridden by visualisation.
 
 ## To-do

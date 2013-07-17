@@ -42,22 +42,7 @@
         /**
          * Fades the settings box out on load.
          */
-        $("#starcontrol").fadeTo(10000, 0);
-
-        /**
-         * Fades the settings box in on mouse hover, and fades it out on mouseout.
-         */
-        $("#starcontrol").hover(function () {
-            $(this).stop().fadeTo(250, 1);
-            $("#starcontrol-glow").css("box-shadow", "none");
-        }, function () {
-            $(this).fadeTo(500, 0);
-        });
-
-        $("#starcontrol").bind('touchenter', function () {
-            $(this).stop().fadeTo(250, 1);
-            $("#starcontrol-glow").css("box-shadow", "none");
-        });
+        $("#starcontrol").addClass('fade');
 
         /**
          * Controls.
@@ -83,10 +68,18 @@
             mouseY = e.pageY || e.originalEvent.touches[0].pageY;
         });
 
+        // If touch device
+        if (!!('ontouchstart' in window)) {
+            $('.button').addClass('touch-control');
+        }
+
         /**
          * UI controls for togglable buttons.
          */
-        $('.control-toggle').click(function () {
+        $('.control-toggle').bind('click touchstart', function (e) {
+            e.stopPropagation(); // Stop event from firing twice on touch
+            e.preventDefault();
+
             switch ($(this).attr("value")) {
             case "rotation":
                 rotation = !rotation;
@@ -118,9 +111,11 @@
         /**
          * UI controls for normal buttons.
          */
-        $('.control-button').click(function () {
+        $('.control-button').bind('click touchstart', function (e) {
+            e.stopPropagation(); // Stop event from firing twice on touch
+            e.preventDefault();
+
             switch ($(this).attr("value")) {
-            // Starcount
             case "starcount-add":
                 starcount = Math.floor(starcount * 1.61);
                 console.log(starcount);
@@ -131,8 +126,6 @@
                 console.log(starcount);
                 canvas.createStarfield(starcount);
                 break;
-
-            // Speed factor
             case "starspeed-add":
                 speedFactor *= 1.61;
                 console.log(speedFactor);
